@@ -17,10 +17,10 @@ var parametresAttendus = [
 var carte;
 var couchePoints;
 var requeteEnCours;
+var premierChargement = true;
 
 
 $(document).ready(function() {
-	console.log('ready !');
 
 	// 1. parse URL params
 	lireParametresURL();
@@ -38,7 +38,7 @@ $(document).ready(function() {
 	};
 	var coucheOSM = new L.TileLayer(config.tuilesOsmfrURL, optionsCoucheOSM);
 	var coucheSatellite = new L.TileLayer(config.tuilesGoogleURL, optionsCoucheGoogle);
-	couchePoints = new L.layerGroup();
+	couchePoints = new L.featureGroup();
 
 	var optionsCarte = {
 		center : new L.LatLng(46, 2),
@@ -70,7 +70,6 @@ $(document).ready(function() {
 
 	// 3. call point WS on map move / load
 	carte.on('moveend', (e) => {
-		console.log('moooorduuuu');
 		loadData();
 	});
 	loadData(); // initial loading
@@ -97,7 +96,10 @@ function loadData() {
 	// config
 	var URLPoints = config.servicePointsURL;
 	var URLStation = config.serviceStationURL;
-	var serviceParams = [];
+	// @WARNING copie à la louche, attention aux injections et aux appels erronés
+	// @TODO filtrer
+	var serviceParams = parametresURL;
+
 	// set bbox
 	var bounds = carte.getBounds();
 	var zoom = carte.getZoom();
@@ -106,17 +108,17 @@ function loadData() {
 	// debug
 	if (zoom < 11) {
 		console.log('zoom trop faible: ' + zoom);
-		return;
+		//return;
 	}
-	// add BBOX
-	serviceParams.push('ne=' + bounds._northEast.lat + '|' + bounds._northEast.lng);
-	serviceParams.push('sw=' + bounds._southWest.lat + '|' + bounds._southWest.lng);
 
-	// add optional parameters
-	// @TODO
-
-	// append parameters
-	URLPoints += '?' + serviceParams.join('&');
+	// ne charger que les points de la zone affichée, sauf la première fois
+	if (premierChargement) {
+		serviceParams.ne = 90 + '|' + 180;
+		serviceParams.sw = -90 + '|' + -180;
+	} else {
+		serviceParams.ne = bounds._northEast.lat + '|' + bounds._northEast.lng;
+		serviceParams.sw = bounds._southWest.lat + '|' + bounds._southWest.lng;
+	}
 
 	// cancel previous request
 	if (requeteEnCours) {
@@ -141,11 +143,11 @@ function loadData() {
 		//$('#info-taxons').show();
 
 		// infos
+		$('#zone-infos').show();
 		$('#nombre-observations').html(data.stats.observations);
 		$('#info-observations').show();
 		$('#nombre-stations').html(data.stats.stations);
 		$('#info-stations').show();
-		console.log(data.stats.stations + ' stations, ' + data.stats.observations + ' observations');
 		
 		// points
 		data.points.forEach((p) => {
@@ -153,11 +155,9 @@ function loadData() {
 			var cluster = (p.id.substring(0, 6) === 'GROUPE');
 			var marker;
 			if (cluster) {
-				console.log('oh le bo clustaire');
 				marker = L.marker([p.lat, p.lng], { icon:	new L.NumberedDivIcon({ number: p.nbreMarqueur }) }).addTo(couchePoints);
 				// cliquer sur un cluster fait zoomer dessus (+1)
 				$(marker).click((e) => {
-					console.log('ça zoome du cul !');
 					carte.setView([p.lat, p.lng], Math.min(MAXZOOM, zoom + 3));
 				});
 				
@@ -166,7 +166,15 @@ function loadData() {
 				marker.bindPopup("Station " + p.id);
 			}
 		});
+		
+		// la première fois, ajuster la carte sans recharger les points
+		if (premierChargement) {
+			carte.fitBounds(couchePoints.getBounds());
+		}
+
 		// hide waiting cursor
 		$('#zone-chargement-point').hide();
+
+		premierChargement = false;
 	});
 }

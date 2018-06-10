@@ -58,6 +58,7 @@ body {
 }
 
 #zone-infos {
+	display: none;
 	position: absolute;
 	font-size: 1.1em;
 	bottom: 10px;
