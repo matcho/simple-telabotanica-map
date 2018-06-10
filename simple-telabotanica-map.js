@@ -16,6 +16,7 @@ var parametresAttendus = [
 ];
 var carte;
 var couchePoints;
+var paramsService;
 var requeteEnCours;
 var premierChargement = true;
 
@@ -25,6 +26,9 @@ $(document).ready(function() {
 	// 1. parse URL params
 	lireParametresURL();
 	console.log(parametresURL);
+	// @WARNING copie à la louche, attention aux injections et aux appels erronés
+	// @TODO filtrer
+	paramsService = parametresURL;
 
 	// 2. init map
 	var optionsCoucheOSM = {
@@ -78,27 +82,24 @@ $(document).ready(function() {
 
 
 function lireParametresURL(sParam) {
-    var queryString = decodeURIComponent(window.location.search.substring(1)),
-        morceaux = queryString.split('&'),
-        paireParam,
-        i;
+	var queryString = decodeURIComponent(window.location.search.substring(1)),
+		morceaux = queryString.split('&'),
+		paireParam,
+		i;
 
-    for (i=0; i < morceaux.length; i++) {
-        paireParam = morceaux[i].split('=');
+	for (i=0; i < morceaux.length; i++) {
+		paireParam = morceaux[i].split('=');
 		var nomParam = paireParam[0];
 		if (parametresAttendus.indexOf(nomParam) >= 0) {
 			parametresURL[nomParam] = paireParam[1];
 		}
-    }
+	}
 }
 
 function loadData() {
 	// config
 	var URLPoints = config.servicePointsURL;
-	var URLStation = config.serviceStationURL;
-	// @WARNING copie à la louche, attention aux injections et aux appels erronés
-	// @TODO filtrer
-	var serviceParams = parametresURL;
+	var paramsPoints = JSON.parse(JSON.stringify(paramsService)); // clone
 
 	// set bbox
 	var bounds = carte.getBounds();
@@ -113,11 +114,11 @@ function loadData() {
 
 	// ne charger que les points de la zone affichée, sauf la première fois
 	if (premierChargement) {
-		serviceParams.ne = 90 + '|' + 180;
-		serviceParams.sw = -90 + '|' + -180;
+		paramsPoints.ne = 90 + '|' + 180;
+		paramsPoints.sw = -90 + '|' + -180;
 	} else {
-		serviceParams.ne = bounds._northEast.lat + '|' + bounds._northEast.lng;
-		serviceParams.sw = bounds._southWest.lat + '|' + bounds._southWest.lng;
+		paramsPoints.ne = bounds._northEast.lat + '|' + bounds._northEast.lng;
+		paramsPoints.sw = bounds._southWest.lat + '|' + bounds._southWest.lng;
 	}
 
 	// cancel previous request
@@ -129,7 +130,7 @@ function loadData() {
 	$('#zone-chargement-point').show();
 
 	// appel service
-	requeteEnCours = $.get(URLPoints, serviceParams, (data) => {
+	requeteEnCours = $.get(URLPoints, paramsPoints, (data) => {
 		console.log('got data !');
 		console.log(data);
 
@@ -160,10 +161,13 @@ function loadData() {
 				$(marker).click((e) => {
 					carte.setView([p.lat, p.lng], Math.min(MAXZOOM, zoom + 3));
 				});
-				
 			} else {
 				marker = L.marker([p.lat, p.lng]).addTo(couchePoints);
-				marker.bindPopup("Station " + p.id);
+				// cliquer sur un marqueur affiche les infos de la station
+				marker.bindPopup('chargement…');
+				$(marker).click((e) => {
+					chargerPopupStation(e, p.id);
+				});
 			}
 		});
 		
@@ -176,5 +180,19 @@ function loadData() {
 		$('#zone-chargement-point').hide();
 
 		premierChargement = false;
+	});
+}
+
+function chargerPopupStation(e, idStation) {
+	var popup = e.target.getPopup();
+	var URLStation = config.serviceStationURL;
+	var paramsStation = JSON.parse(JSON.stringify(paramsService)); // clone
+
+	paramsStation.station = idStation;
+
+	$.get(URLStation, paramsStation, (data) => {
+		console.log(data);
+		popup.setContent('station: ' + data.commune);
+		popup.update();
 	});
 }
