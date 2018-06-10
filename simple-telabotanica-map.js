@@ -1,5 +1,5 @@
 // globals
-var MAXZOOM = 18; // Leaflet default: 18
+var MAXZOOM = 20; // Leaflet default: 18
 
 var parametresURL = {};
 var parametresAttendus = [
@@ -10,46 +10,52 @@ var parametresAttendus = [
 	'titre',
 	'referentiel',
 	'logo',
+	'nbjours',
 	'url_site',
 	'image',
 	'groupe_zones_geo'
 ];
 var carte;
+var bornesCarte = [[-85.0, -180.0], [85.0, 180.0]];
 var couchePoints;
 var paramsService;
 var requeteEnCours;
 var premierChargement = true;
+var inhiberProchainDeplacement = false;
 
 
 $(document).ready(function() {
 
 	// 1. parse URL params
 	lireParametresURL();
-	console.log(parametresURL);
-	// @WARNING copie à la louche, attention aux injections et aux appels erronés
-	// @TODO filtrer
+	//console.log(parametresURL);
 	paramsService = parametresURL;
 
 	// 2. init map
 	var optionsCoucheOSM = {
 		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors,'
 		+ ' <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
-		maxZoom: MAXZOOM
+		maxZoom: MAXZOOM,
+		noWrap: true
 	};
 	var optionsCoucheGoogle = {
 		attribution: 'Map data &copy;'+new Date().getFullYear()+' <a href="http://maps.google.com">Google</a>',
-		maxZoom: MAXZOOM
+		maxZoom: MAXZOOM,
+		noWrap: true
 	};
 	var coucheOSM = new L.TileLayer(config.tuilesOsmfrURL, optionsCoucheOSM);
 	var coucheSatellite = new L.TileLayer(config.tuilesGoogleURL, optionsCoucheGoogle);
 	couchePoints = new L.featureGroup();
 
 	var optionsCarte = {
-		center : new L.LatLng(46, 2),
+		center : [46.0, 2.0],
 		zoom : 6,
+		maxBounds: bornesCarte,
 		maxZoom: MAXZOOM
 	};
 	carte = L.map('map', optionsCarte);
+	// empêche de trop dézoomer
+	carte.setMinZoom(carte.getBoundsZoom(optionsCarte.maxBounds) + 1);
 
 	coucheOSM.addTo(carte);
 	couchePoints.addTo(carte);
@@ -72,14 +78,19 @@ $(document).ready(function() {
 	carte.addControl(new L.Control.Fullscreen().setPosition('bottomleft'));
 	carte.addControl(new L.control.scale({ metric: true, imperial: false }).setPosition('bottomright'));
 
-	// 3. call point WS on map move / load
+	// 3. charger les points quand on déplace la carte / zoome
 	carte.on('moveend', (e) => {
-		loadData();
+		// sauf si on a sorti un joker !
+		console.log('inhiberProchainDeplacement :', inhiberProchainDeplacement);
+		if (inhiberProchainDeplacement) {
+			console.log('ON PASSE UN TOUR');
+			inhiberProchainDeplacement = false;
+		} else {
+			loadData();
+		}
 	});
 	loadData(); // initial loading
-
 });
-
 
 function lireParametresURL(sParam) {
 	var queryString = decodeURIComponent(window.location.search.substring(1)),
@@ -107,18 +118,15 @@ function loadData() {
 	console.log(zoom);
 
 	// debug
-	if (zoom < 11) {
-		console.log('zoom trop faible: ' + zoom);
-		//return;
-	}
+	//if (zoom < 11) { console.log('zoom trop faible: ' + zoom); return; }
 
 	// ne charger que les points de la zone affichée, sauf la première fois
 	if (premierChargement) {
-		paramsPoints.ne = 90 + '|' + 180;
-		paramsPoints.sw = -90 + '|' + -180;
+		paramsPoints.ne = '85|180';
+		paramsPoints.sw = '-85|-180';
 	} else {
-		paramsPoints.ne = bounds._northEast.lat + '|' + bounds._northEast.lng;
-		paramsPoints.sw = bounds._southWest.lat + '|' + bounds._southWest.lng;
+		paramsPoints.ne = (bounds._northEast.lat % 90) + '|' + (bounds._northEast.lng % 180);
+		paramsPoints.sw = (bounds._southWest.lat % 90) + '|' + (bounds._southWest.lng % 180);
 	}
 
 	// cancel previous request
@@ -130,56 +138,68 @@ function loadData() {
 	$('#zone-chargement-point').show();
 
 	// appel service
-	requeteEnCours = $.get(URLPoints, paramsPoints, (data) => {
-		console.log('got data !');
-		console.log(data);
+	requeteEnCours = $.ajax({
+		url: URLPoints,
+		type: 'GET',
+		data: paramsPoints,
+		timeout: 60000, // important bicoz service kipu
+		error: (data) => {
+			$('#zone-chargement-point').hide();
+			premierChargement = false;
+		},
+		success: (data) => {
+			console.log('got data !');
+			console.log(data);
 
-		// clear current markers
-		couchePoints.clearLayers();
+			// clear current markers
+			couchePoints.clearLayers();
 
-		// nombre de taxons
-		// @TODO appeler le service taxons
-		var nombreTaxons = '?';
-		//$('#nombre-taxons').html(nombreTaxons);
-		//$('#info-taxons').show();
+			// nombre de taxons
+			// @TODO appeler le service taxons
+			var nombreTaxons = '?';
+			//$('#nombre-taxons').html(nombreTaxons);
+			//$('#info-taxons').show();
 
-		// infos
-		$('#zone-infos').show();
-		$('#nombre-observations').html(data.stats.observations);
-		$('#info-observations').show();
-		$('#nombre-stations').html(data.stats.stations);
-		$('#info-stations').show();
+			// infos
+			$('#zone-infos').show();
+			$('#nombre-observations').html(data.stats.observations);
+			$('#info-observations').show();
+			$('#nombre-stations').html(data.stats.stations);
+			$('#info-stations').show();
+
+			// points
+			data.points.forEach((p) => {
+				// single station or cluster
+				var cluster = (p.id.substring(0, 6) === 'GROUPE');
+				var marker;
+				if (cluster) {
+					//marker = L.marker([p.lat, p.lng], { icon: new L.NumberedDivIcon({ number: p.nbreMarqueur }) }).addTo(couchePoints);
+					marker = L.marker([p.lat, p.lng], { icon: iconeCluster(p.nbreMarqueur) }).addTo(couchePoints);
+					// cliquer sur un cluster fait zoomer dessus (+1)
+					$(marker).click((e) => {
+						carte.setView([p.lat, p.lng], Math.min(MAXZOOM, zoom + 3));
+					});
+				} else {
+					marker = L.marker([p.lat, p.lng]).addTo(couchePoints);
+					// cliquer sur un marqueur affiche les infos de la station
+					marker.bindPopup('chargement…');
+					$(marker).click((e) => {
+						chargerPopupStation(e, p.id);
+					});
+				}
+			});
 		
-		// points
-		data.points.forEach((p) => {
-			// single station or cluster
-			var cluster = (p.id.substring(0, 6) === 'GROUPE');
-			var marker;
-			if (cluster) {
-				marker = L.marker([p.lat, p.lng], { icon:	new L.NumberedDivIcon({ number: p.nbreMarqueur }) }).addTo(couchePoints);
-				// cliquer sur un cluster fait zoomer dessus (+1)
-				$(marker).click((e) => {
-					carte.setView([p.lat, p.lng], Math.min(MAXZOOM, zoom + 3));
-				});
-			} else {
-				marker = L.marker([p.lat, p.lng]).addTo(couchePoints);
-				// cliquer sur un marqueur affiche les infos de la station
-				marker.bindPopup('chargement…');
-				$(marker).click((e) => {
-					chargerPopupStation(e, p.id);
-				});
+			// la première fois, ajuster la carte sans recharger les points
+			if (premierChargement) {
+				inhiberProchainDeplacement = true;
+				carte.fitBounds(couchePoints.getBounds());
 			}
-		});
-		
-		// la première fois, ajuster la carte sans recharger les points
-		if (premierChargement) {
-			carte.fitBounds(couchePoints.getBounds());
+
+			// hide waiting cursor
+			$('#zone-chargement-point').hide();
+
+			premierChargement = false;
 		}
-
-		// hide waiting cursor
-		$('#zone-chargement-point').hide();
-
-		premierChargement = false;
 	});
 }
 
@@ -195,4 +215,18 @@ function chargerPopupStation(e, idStation) {
 		popup.setContent('station: ' + data.commune);
 		popup.update();
 	});
+}
+
+// copiée depuis Leaflet-MarkerCluster
+// https://github.com/Leaflet/Leaflet.markercluster/blob/6f0f94c23bb51346488feb039288d2b0065acc00/src/MarkerClusterGroup.js
+function iconeCluster (nb) {
+	var c = ' marker-cluster-';
+	if (nb < 10) {
+		c += 'small';
+	} else if (nb < 100) {
+		c += 'medium';
+	} else {
+		c += 'large';
+	}
+	return new L.DivIcon({ html: '<div><span>' + nb + '</span></div>', className: 'marker-cluster' + c, iconSize: new L.Point(40, 40) });
 }
