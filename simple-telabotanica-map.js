@@ -1,4 +1,6 @@
 // globals
+var MAXZOOM = 18; // Leaflet default: 18
+
 var parametresURL = {};
 var parametresAttendus = [
 	'utilisateur',
@@ -28,50 +30,50 @@ $(document).ready(function() {
 	var optionsCoucheOSM = {
 		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors,'
 		+ ' <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
-		maxZoom: 18
+		maxZoom: MAXZOOM
 	};
 	var optionsCoucheGoogle = {
 		attribution: 'Map data &copy;'+new Date().getFullYear()+' <a href="http://maps.google.com">Google</a>',
-		maxZoom: 18
+		maxZoom: MAXZOOM
 	};
 	var coucheOSM = new L.TileLayer(config.tuilesOsmfrURL, optionsCoucheOSM);
 	var coucheSatellite = new L.TileLayer(config.tuilesGoogleURL, optionsCoucheGoogle);
-
-	couchePoints = new L.MarkerClusterGroup({
-		disableClusteringAtZoom : 10
-	});
+	couchePoints = new L.layerGroup();
 
 	var optionsCarte = {
 		center : new L.LatLng(46, 2),
 		zoom : 6,
-		layers : [coucheOSM]
+		maxZoom: MAXZOOM
 	};
 	carte = L.map('map', optionsCarte);
 
 	coucheOSM.addTo(carte);
 	couchePoints.addTo(carte);
+
+	// 2.1 custom zoom position
+	var corners = carte._controlCorners;
+	var container = carte._controlContainer;
+	corners['topleft-custom-left'] = L.DomUtil.create('div', 'leaflet-topleft-custom leaflet-left', container);
 	
-	// 2.1 map controls
+	// 2.2 map controls
 	var baseMaps = {
 		"Plan" : coucheOSM,
 		"Satellite" : coucheSatellite
 	};
 	var overlayMaps = {
-		"Points" : couchePoints
+		//"Points" : couchePoints
 	};
-	L.control.layers(baseMaps, overlayMaps).addTo(carte);
-
+	L.control.layers(baseMaps, overlayMaps).addTo(carte);// Create additional Control placeholders
+	carte.zoomControl.setPosition('topleft-custom-left');
+	carte.addControl(new L.Control.Fullscreen().setPosition('bottomleft'));
+	carte.addControl(new L.control.scale({ metric: true, imperial: false }).setPosition('bottomright'));
 
 	// 3. call point WS on map move / load
 	carte.on('moveend', (e) => {
 		console.log('moooorduuuu');
-		console.log(e);
 		loadData();
 	});
 	loadData(); // initial loading
-
-	var marker = L.marker([43.5, 3.09]).addTo(couchePoints);
-	marker.bindPopup("<b>Hello world!</b><br>I am a popup.");
 
 	// 4. set events listener
 
@@ -96,8 +98,6 @@ function lireParametresURL(sParam) {
 
 function loadData() {
 	console.log('load data');
-	
-	// 0. set waiting curor
 
 	var URLPoints = config.servicePointsURL;
 	var URLStation = config.serviceStationURL;
@@ -106,18 +106,19 @@ function loadData() {
 	var bounds = carte.getBounds();
 	var zoom = carte.getZoom();
 	//console.log(bounds);
-	//console.log(zoom);
+	console.log(zoom);
 
-	// if zoom is too low, use cluster service instead of regular one
+	// debug
 	if (zoom < 11) {
 		console.log('zoom trop faible: ' + zoom);
 		return;
 	}
-
+	// add BBOX
 	serviceParams.push('ne=' + bounds._northEast.lat + '|' + bounds._northEast.lng);
 	serviceParams.push('sw=' + bounds._southWest.lat + '|' + bounds._southWest.lng);
-	// &zoom=3&ne=72.8918633443125|176&sw=-1.5005593137338373|-156
+
 	// add optional parameters
+	// @TODO
 
 	// append parameters
 	URLPoints += '?' + serviceParams.join('&');
@@ -127,15 +128,36 @@ function loadData() {
 		requeteEnCours.abort();
 	}
 
-	// call
+	// curseur d'attente
+	$('#zone-chargement-point').show();
+
+	// appel service
 	requeteEnCours = $.get(URLPoints, serviceParams, (data) => {
 		console.log('got data !');
 		console.log(data);
+		// clear current markers
+		couchePoints.clearLayers();
+
 		console.log(data.stats.stations + ' stations, ' + data.stats.observations + ' observations');
 		data.points.forEach((p) => {
-			var marker = L.marker([p.lat, p.lng]).addTo(couchePoints);
-			marker.bindPopup("Station " + p.id);
+			// single station or cluster
+			var cluster = (p.id.substring(0, 6) === 'GROUPE');
+			var marker;
+			if (cluster) {
+				console.log('oh le bo clustaire');
+				marker = L.marker([p.lat, p.lng], { icon:	new L.NumberedDivIcon({ number: p.nbreMarqueur }) }).addTo(couchePoints);
+				// cliquer sur un cluster fait zoomer dessus (+1)
+				$(marker).click((e) => {
+					console.log('ça zoome du cul !');
+					carte.setView([p.lat, p.lng], Math.min(MAXZOOM, zoom + 3));
+				});
+				
+			} else {
+				marker = L.marker([p.lat, p.lng]).addTo(couchePoints);
+				marker.bindPopup("Station " + p.id);
+			}
 		});
-		// 999. hide waiting cursor
+		// hide waiting cursor
+		$('#zone-chargement-point').hide();
 	});
 }
