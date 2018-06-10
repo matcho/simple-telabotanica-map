@@ -101,3 +101,66 @@ body {
 	width: 25px;
 	text-align: center;
 }
+
+.leaflet-popup-scrolled {
+	border-bottom: none !important;
+	border-top: none !important;
+	overflow-x: hidden !important;
+}
+
+.popup-obs {
+	width: 400px;
+	font-family: "Trebuchet MS", Arial, sans-serif; /* @TODO trouver mieux */
+}
+
+.titre-obs {
+	font-size: 1.3em;
+	font-weight: bold;
+	padding: 4px;
+}
+
+.titre-obs-details {
+	font-weight: normal;
+}
+
+.liste-obs {
+}
+
+.obs {
+	min-height: 105px;
+	padding-top: 10px;
+	border-top: solid #f0f0f0 1px;
+}
+
+.image-obs {
+	float: left;
+	height: 96px;
+	width: 96px;
+}
+
+.details-obs {
+	width: 285px;
+	padding-left: 105px;
+}
+
+.taxon-obs {
+	font-weight: bold;
+	font-size: 1.1em;
+}
+
+.date-obs {
+	color: #606060;
+	margin-top: 2px;
+}
+
+.lieu-obs {
+	color: black;
+	margin-top: 2px;
+	min-height: 25px;
+	line-height: 1.3em;
+}
+
+.auteur-obs {
+	color: #606060;
+	margin-top: 2px;
+}

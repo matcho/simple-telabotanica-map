@@ -78,6 +78,20 @@ $(document).ready(function() {
 	carte.addControl(new L.Control.Fullscreen().setPosition('bottomleft'));
 	carte.addControl(new L.control.scale({ metric: true, imperial: false }).setPosition('bottomright'));
 
+	/*marker = L.marker([43.615, 3.851]).addTo(couchePoints);
+	// cliquer sur un marqueur affiche les infos de la station
+	marker.bindPopup('chargement…', { autoPan: false, maxWidth: 450, maxHeight: 450 });
+	$(marker).click((e) => {
+		chargerPopupStation(e, {
+			id: "STATION:43.62321|3.67077",
+			lat: 10.69713,
+			lng: -12.24563,
+			nom: "petit col en haut des maisons",
+			type_emplacement: "stations",
+			zonegeo: "INSEE-C:"
+		});
+	});*/
+
 	// 3. charger les points quand on déplace la carte / zoome
 	carte.on('moveend', (e) => {
 		// sauf si on a sorti un joker !
@@ -182,9 +196,9 @@ function loadData() {
 				} else {
 					marker = L.marker([p.lat, p.lng]).addTo(couchePoints);
 					// cliquer sur un marqueur affiche les infos de la station
-					marker.bindPopup('chargement…');
+					marker.bindPopup('chargement…', { autoPan: false, maxWidth: 450, maxHeight: 450 });
 					$(marker).click((e) => {
-						chargerPopupStation(e, p.id);
+						chargerPopupStation(e, p);
 					});
 				}
 			});
@@ -203,21 +217,63 @@ function loadData() {
 	});
 }
 
-function chargerPopupStation(e, idStation) {
+function chargerPopupStation(e, point) {
 	var popup = e.target.getPopup();
 	var URLStation = config.serviceStationURL;
 	var paramsStation = JSON.parse(JSON.stringify(paramsService)); // clone
+	
+	// ID station
+	paramsStation.station = point.id;
 
-	paramsStation.station = idStation;
+	// chargement du popup s'il n'est pas déjà en cache
+	if (! popup.cache) {
+		console.log('on charge !');
+		$.get(URLStation, paramsStation, (data) => {
+			console.log(data);
+			// construction du contenu du popup
+			// @TODO utiliser un template handlebars plutôt que ce tas de vomi
+			var contenu = '';
+			contenu += '<div class="popup-obs">';
+			contenu += '<div class="titre-obs">' + (point.nom || data.commune) + ' <span class="titre-obs-details">(' + data.observations.length + ')</span></div>';
+			contenu += '<div class="liste-obs">';
+			data.observations.forEach((o) => {
+				contenu += '<div class="obs">';
+				var image = 'pasdimagenb.png';
+				if (o.images && o.images.length > 0) {
+					image = o.images[0].miniature.replace('CXS', 'CRXS');
+				}
+				contenu += '<img class="image-obs" src="' + image + '">';
+				contenu += '<div class="details-obs">';
+				contenu += '<div class="taxon-obs">' + (o.nomSci || 'espèce inconnue') + '</div>';
+				contenu += '<div class="date-obs">' + (o.date || 'date inconnue') + '</div>';
+				contenu += '<div class="lieu-obs">' + (o.lieu || 'lieu inconnu') + '</div>';
+				contenu += '<div class="auteur-obs">';
+				var auteur = (o.observateur || 'auteur⋅e inconnu⋅e');
+				if (o.observateurId && o.observateurId != 0) {
+					auteur = '<a href="' + config.profilURL + o.observateurId + '">' + auteur + '</a>';
+				}
+				contenu += auteur;
+				contenu += '</div>';
+				contenu += '</div>'; // details-obs
+				contenu += '</div>'; // obs
+			});
+			contenu += '</div>'; // liste-obs
+			contenu += '</div>'; // popup-obs
 
-	$.get(URLStation, paramsStation, (data) => {
-		console.log(data);
-		popup.setContent('station: ' + data.commune);
-		popup.update();
-	});
+			// fouzy
+			popup.setContent(contenu);
+			popup.update();
+			// cache
+			popup.cache = true;
+		});
+	} else {
+		console.log('popup en cache');
+		
+	}
 }
 
-// copiée depuis Leaflet-MarkerCluster
+// copiée depuis Leaflet-MarkerCluster, utilisée manuellement pour dessiner les
+// clusters calculés côté serveur
 // https://github.com/Leaflet/Leaflet.markercluster/blob/6f0f94c23bb51346488feb039288d2b0065acc00/src/MarkerClusterGroup.js
 function iconeCluster (nb) {
 	var c = ' marker-cluster-';
@@ -229,4 +285,24 @@ function iconeCluster (nb) {
 		c += 'large';
 	}
 	return new L.DivIcon({ html: '<div><span>' + nb + '</span></div>', className: 'marker-cluster' + c, iconSize: new L.Point(40, 40) });
+}
+
+function figerCarte() {
+	carte.dragging.disable();
+	carte.touchZoom.disable();
+	carte.doubleClickZoom.disable();
+	carte.scrollWheelZoom.disable();
+	carte.boxZoom.disable();
+	carte.keyboard.disable();
+	if (carte.tap) carte.tap.disable();
+}
+
+function animerCarte() {
+	carte.dragging.enable();
+	carte.touchZoom.enable();
+	carte.doubleClickZoom.enable();
+	carte.scrollWheelZoom.enable();
+	carte.boxZoom.enable();
+	carte.keyboard.enable();
+	if (carte.tap) carte.tap.enable();
 }
