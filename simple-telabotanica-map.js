@@ -75,9 +75,6 @@ $(document).ready(function() {
 	});
 	loadData(); // initial loading
 
-	// 4. set events listener
-
-	// 5. trigger events listener to decorate map
 });
 
 
@@ -97,15 +94,13 @@ function lireParametresURL(sParam) {
 }
 
 function loadData() {
-	console.log('load data');
-
+	// config
 	var URLPoints = config.servicePointsURL;
 	var URLStation = config.serviceStationURL;
 	var serviceParams = [];
 	// set bbox
 	var bounds = carte.getBounds();
 	var zoom = carte.getZoom();
-	//console.log(bounds);
 	console.log(zoom);
 
 	// debug
@@ -135,10 +130,24 @@ function loadData() {
 	requeteEnCours = $.get(URLPoints, serviceParams, (data) => {
 		console.log('got data !');
 		console.log(data);
+
 		// clear current markers
 		couchePoints.clearLayers();
 
+		// nombre de taxons
+		// @TODO appeler le service taxons
+		var nombreTaxons = '?';
+		//$('#nombre-taxons').html(nombreTaxons);
+		//$('#info-taxons').show();
+
+		// infos
+		$('#nombre-observations').html(data.stats.observations);
+		$('#info-observations').show();
+		$('#nombre-stations').html(data.stats.stations);
+		$('#info-stations').show();
 		console.log(data.stats.stations + ' stations, ' + data.stats.observations + ' observations');
+		
+		// points
 		data.points.forEach((p) => {
 			// single station or cluster
 			var cluster = (p.id.substring(0, 6) === 'GROUPE');
