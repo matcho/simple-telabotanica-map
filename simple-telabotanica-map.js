@@ -141,7 +141,9 @@ function loadData() {
 	// set bbox
 	var bounds = carte.getBounds();
 	var zoom = carte.getZoom();
-	console.log(zoom);
+	//console.log(zoom);
+	console.log(bounds._northEast);
+	console.log(bounds._southWest);
 
 	// debug
 	//if (zoom < 11) { console.log('zoom trop faible: ' + zoom); return; }
@@ -151,8 +153,8 @@ function loadData() {
 		paramsPoints.ne = '85|180';
 		paramsPoints.sw = '-85|-180';
 	} else {
-		paramsPoints.ne = (bounds._northEast.lat % 90) + '|' + (bounds._northEast.lng % 180);
-		paramsPoints.sw = (bounds._southWest.lat % 90) + '|' + (bounds._southWest.lng % 180);
+		paramsPoints.ne = ((bounds._northEast.lat % 90) || 90) + '|' + ((bounds._northEast.lng % 180) || 180);
+		paramsPoints.sw = ((bounds._southWest.lat % 90) || 90) + '|' + ((bounds._southWest.lng % 180) || 180);
 	}
 
 	// cancel previous request
