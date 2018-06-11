@@ -22,6 +22,7 @@ var paramsService;
 var requeteEnCours;
 var premierChargement = true;
 var inhiberProchainDeplacement = false;
+var inhiber = false;
 
 
 $(document).ready(function() {
@@ -99,11 +100,22 @@ $(document).ready(function() {
 		if (inhiberProchainDeplacement) {
 			console.log('ON PASSE UN TOUR');
 			inhiberProchainDeplacement = false;
+		} else if (inhiber) {
+			console.log('ON NE BOUGE PLUS JUSQU\'À NOUVEL ORDRE');
 		} else {
 			loadData();
 		}
 	});
 	loadData(); // initial loading
+
+	// 4. événements divers
+
+	// réactiver le chargement des points quand le popup est fermé
+	couchePoints.on('popupclose', (e) => {
+		console.log('désinhibationnage du cul');
+		inhiber = false;
+		//loadData();
+	});
 });
 
 function lireParametresURL(sParam) {
@@ -196,8 +208,9 @@ function loadData() {
 				} else {
 					marker = L.marker([p.lat, p.lng]).addTo(couchePoints);
 					// cliquer sur un marqueur affiche les infos de la station
-					marker.bindPopup('chargement…', { autoPan: false, maxWidth: 450, maxHeight: 450 });
+					marker.bindPopup('chargement…', { autoPan: true, maxWidth: 450, maxHeight: 450 });
 					$(marker).click((e) => {
+						inhiber = true;
 						chargerPopupStation(e, p);
 					});
 				}
@@ -227,14 +240,13 @@ function chargerPopupStation(e, point) {
 
 	// chargement du popup s'il n'est pas déjà en cache
 	if (! popup.cache) {
-		console.log('on charge !');
 		$.get(URLStation, paramsStation, (data) => {
 			console.log(data);
 			// construction du contenu du popup
 			// @TODO utiliser un template handlebars plutôt que ce tas de vomi
 			var contenu = '';
 			contenu += '<div class="popup-obs">';
-			contenu += '<div class="titre-obs">' + (point.nom || data.commune) + ' <span class="titre-obs-details">(' + data.observations.length + ')</span></div>';
+			contenu += '<div class="titre-obs">' + (point.nom || data.commune).replace('()', '') + ' <span class="titre-obs-details">(' + data.observations.length + ')</span></div>';
 			contenu += '<div class="liste-obs">';
 			data.observations.forEach((o) => {
 				contenu += '<div class="obs">';
@@ -266,10 +278,7 @@ function chargerPopupStation(e, point) {
 			// cache
 			popup.cache = true;
 		});
-	} else {
-		console.log('popup en cache');
-		
-	}
+	} // else popup en cache
 }
 
 // copiée depuis Leaflet-MarkerCluster, utilisée manuellement pour dessiner les
@@ -288,6 +297,7 @@ function iconeCluster (nb) {
 }
 
 function figerCarte() {
+	console.log('on fige la carte !!');
 	carte.dragging.disable();
 	carte.touchZoom.disable();
 	carte.doubleClickZoom.disable();
@@ -297,7 +307,8 @@ function figerCarte() {
 	if (carte.tap) carte.tap.disable();
 }
 
-function animerCarte() {
+function defigerCarte() {
+	console.log('on défige la carte !!');
 	carte.dragging.enable();
 	carte.touchZoom.enable();
 	carte.doubleClickZoom.enable();
