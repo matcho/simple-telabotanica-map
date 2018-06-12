@@ -79,29 +79,15 @@ $(document).ready(function() {
 	carte.addControl(new L.Control.Fullscreen().setPosition('bottomleft'));
 	carte.addControl(new L.control.scale({ metric: true, imperial: false }).setPosition('bottomright'));
 
-	/*marker = L.marker([43.615, 3.851]).addTo(couchePoints);
-	// cliquer sur un marqueur affiche les infos de la station
-	marker.bindPopup('chargement…', { autoPan: false, maxWidth: 450, maxHeight: 450 });
-	$(marker).click((e) => {
-		chargerPopupStation(e, {
-			id: "STATION:43.62321|3.67077",
-			lat: 10.69713,
-			lng: -12.24563,
-			nom: "petit col en haut des maisons",
-			type_emplacement: "stations",
-			zonegeo: "INSEE-C:"
-		});
-	});*/
-
 	// 3. charger les points quand on déplace la carte / zoome
 	carte.on('moveend', (e) => {
 		// sauf si on a sorti un joker !
-		console.log('inhiberProchainDeplacement :', inhiberProchainDeplacement);
+		//console.log('inhiberProchainDeplacement :', inhiberProchainDeplacement);
 		if (inhiberProchainDeplacement) {
-			console.log('ON PASSE UN TOUR');
+			//console.log('ON PASSE UN TOUR');
 			inhiberProchainDeplacement = false;
 		} else if (inhiber) {
-			console.log('ON NE BOUGE PLUS JUSQU\'À NOUVEL ORDRE');
+			//console.log('ON NE BOUGE PLUS JUSQU\'À NOUVEL ORDRE');
 		} else {
 			loadData();
 		}
@@ -109,12 +95,10 @@ $(document).ready(function() {
 	loadData(); // initial loading
 
 	// 4. événements divers
-
 	// réactiver le chargement des points quand le popup est fermé
 	couchePoints.on('popupclose', (e) => {
-		console.log('désinhibationnage du cul');
+		//console.log('désinhibationnage du cul');
 		inhiber = false;
-		//loadData();
 	});
 });
 
@@ -141,7 +125,7 @@ function loadData() {
 	// set bbox
 	var bounds = carte.getBounds();
 	var zoom = carte.getZoom();
-	//console.log(zoom);
+	console.log(zoom);
 	console.log(bounds._northEast);
 	console.log(bounds._southWest);
 
@@ -150,11 +134,17 @@ function loadData() {
 
 	// ne charger que les points de la zone affichée, sauf la première fois
 	if (premierChargement) {
-		paramsPoints.ne = '85|180';
+		/*paramsPoints.ne = '85|180';
 		paramsPoints.sw = '-85|-180';
+		paramsPoints.zoom = 1;*/
+		// conformité avec cartoPoint
+		paramsPoints.ne = '64|178';
+		paramsPoints.sw = '-64|-158';
+		paramsPoints.zoom = 3;
 	} else {
 		paramsPoints.ne = ((bounds._northEast.lat % 90) || 90) + '|' + ((bounds._northEast.lng % 180) || 180);
 		paramsPoints.sw = ((bounds._southWest.lat % 90) || 90) + '|' + ((bounds._southWest.lng % 180) || 180);
+		paramsPoints.zoom = zoom;
 	}
 
 	// cancel previous request
@@ -176,7 +166,7 @@ function loadData() {
 			premierChargement = false;
 		},
 		success: (data) => {
-			console.log('got data !');
+			//console.log('got data !');
 			console.log(data);
 
 			// clear current markers
@@ -184,7 +174,7 @@ function loadData() {
 
 			// nombre de taxons
 			// @TODO appeler le service taxons
-			var nombreTaxons = '?';
+			//var nombreTaxons = '?';
 			//$('#nombre-taxons').html(nombreTaxons);
 			//$('#info-taxons').show();
 
@@ -203,9 +193,9 @@ function loadData() {
 				if (cluster) {
 					//marker = L.marker([p.lat, p.lng], { icon: new L.NumberedDivIcon({ number: p.nbreMarqueur }) }).addTo(couchePoints);
 					marker = L.marker([p.lat, p.lng], { icon: iconeCluster(p.nbreMarqueur) }).addTo(couchePoints);
-					// cliquer sur un cluster fait zoomer dessus (+1)
+					// cliquer sur un cluster fait zoomer dessus (+2)
 					$(marker).click((e) => {
-						carte.setView([p.lat, p.lng], Math.min(MAXZOOM, zoom + 3));
+						carte.setView([p.lat, p.lng], Math.min(MAXZOOM, zoom + 2));
 					});
 				} else {
 					marker = L.marker([p.lat, p.lng]).addTo(couchePoints);
@@ -221,7 +211,13 @@ function loadData() {
 			// la première fois, ajuster la carte sans recharger les points
 			if (premierChargement) {
 				inhiberProchainDeplacement = true;
-				carte.fitBounds(couchePoints.getBounds());
+				console.log('ajustement aux bornes:', couchePoints.getBounds());
+				console.log('infos bornes service:', data.stats.coordmax);
+				//carte.fitBounds(couchePoints.getBounds());
+				carte.fitBounds([
+					[data.stats.coordmax.latMax, data.stats.coordmax.lngMax],
+					[data.stats.coordmax.latMin, data.stats.coordmax.lngMin]
+				]);
 			}
 
 			// hide waiting cursor
@@ -243,12 +239,16 @@ function chargerPopupStation(e, point) {
 	// chargement du popup s'il n'est pas déjà en cache
 	if (! popup.cache) {
 		$.get(URLStation, paramsStation, (data) => {
-			console.log(data);
+			//console.log(data);
 			// construction du contenu du popup
 			// @TODO utiliser un template handlebars plutôt que ce tas de vomi
 			var contenu = '';
 			contenu += '<div class="popup-obs">';
-			contenu += '<div class="titre-obs">' + (point.nom || data.commune).replace('()', '') + ' <span class="titre-obs-details">(' + data.observations.length + ')</span></div>';
+			var titre = (point.nom || data.commune).replace('()', '').trim();
+			if (titre == '') {
+				titre = 'station inconnue';
+			}
+			contenu += '<div class="titre-obs">' + titre + ' <span class="titre-obs-details">(' + data.observations.length + ')</span></div>';
 			contenu += '<div class="liste-obs">';
 			data.observations.forEach((o) => {
 				contenu += '<div class="obs">';
@@ -256,10 +256,18 @@ function chargerPopupStation(e, point) {
 				if (o.images && o.images.length > 0) {
 					image = o.images[0].miniature.replace('CXS', 'CRXS');
 				}
-				contenu += '<img class="image-obs" src="' + image + '">';
+				var baliseImage = '<img class="image-obs" src="' + image + '">';
+				if (o.images && o.images.length > 0 && o.images[0].normale) {
+					baliseImage = '<a href="' + o.images[0].normale + '" target="_blank">' + baliseImage + '</a>';
+				}
+				contenu += baliseImage;
 				contenu += '<div class="details-obs">';
-				contenu += '<div class="taxon-obs">' + (o.nomSci || 'espèce inconnue') + '</div>';
-				contenu += '<div class="date-obs">' + (o.date || 'date inconnue') + '</div>';
+				var taxon = (o.nomSci || 'espèce inconnue');
+				if (o.nn && o.nn != 0 && o.urlEflore) {
+					taxon = '<a href="' + o.urlEflore + '" target="_blank">' + taxon + '</a>';
+				}
+				contenu += '<div class="taxon-obs">' + taxon + '</div>';
+				contenu += '<div class="date-obs">' + (o.datePubli || 'date inconnue') + '</div>';
 				contenu += '<div class="lieu-obs">' + (o.lieu || 'lieu inconnu') + '</div>';
 				contenu += '<div class="auteur-obs">';
 				var auteur = (o.observateur || 'auteur⋅e inconnu⋅e');
@@ -296,26 +304,4 @@ function iconeCluster (nb) {
 		c += 'large';
 	}
 	return new L.DivIcon({ html: '<div><span>' + nb + '</span></div>', className: 'marker-cluster' + c, iconSize: new L.Point(40, 40) });
-}
-
-function figerCarte() {
-	console.log('on fige la carte !!');
-	carte.dragging.disable();
-	carte.touchZoom.disable();
-	carte.doubleClickZoom.disable();
-	carte.scrollWheelZoom.disable();
-	carte.boxZoom.disable();
-	carte.keyboard.disable();
-	if (carte.tap) carte.tap.disable();
-}
-
-function defigerCarte() {
-	console.log('on défige la carte !!');
-	carte.dragging.enable();
-	carte.touchZoom.enable();
-	carte.doubleClickZoom.enable();
-	carte.scrollWheelZoom.enable();
-	carte.boxZoom.enable();
-	carte.keyboard.enable();
-	if (carte.tap) carte.tap.enable();
 }
