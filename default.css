@@ -14,7 +14,7 @@ body {
 }
 
 .bordure {
-	border: 2px solid #B0C6C6;
+	border: 2px solid #9baeae;
 }
 
 #logo {
@@ -30,7 +30,7 @@ body {
 	border-bottom: none;
 }
 
-.image-logo {
+#image-logo {
 	padding: 5px;
 	background-color: rgba(255, 255, 255, 0.9);
 	border-radius: 4px;
@@ -57,6 +57,23 @@ body {
 	margin-right: 5px;
 }
 
+#zone-titre {
+	display: none;
+	position: absolute;
+	left: 50%;
+	top: 11px;
+	z-index: 799;
+	width: 600px;
+	margin-left: -300px;
+	height: 20px;
+	padding: 5px;
+	text-align: center;
+	background-color: rgba(255, 255, 255, 0.95);
+	border-radius: 4px;
+	font-size: 1.1em;
+	font-weight: bold;
+}
+
 #zone-infos {
 	display: none;
 	position: absolute;
@@ -69,8 +86,24 @@ body {
 	height: 20px;
 	padding: 5px;
 	text-align: center;
-	background-color: rgba(255, 255, 255, 0.9);
+	background-color: rgba(255, 255, 255, 0.95);
 	border-radius: 4px;
+}
+
+#zone-aide {
+	position: absolute;
+	left: 10px;
+	bottom: 50px;
+	z-index: 1002;
+	width: 20px;
+	height: 20px;
+	padding: 5px;
+	text-align: center;
+	background-color: rgba(255, 255, 255, 0.9);
+	color: black;
+	border-radius: 4px;
+	font-size: 1.1em;
+	font-weight: bold;
 }
 
 #info-taxons, #info-observations, #info-stations {

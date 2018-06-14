@@ -25,14 +25,23 @@
 			</div>
 			<div id="logo">
 				<a href="http://www.tela-botanica.org" title="Aller à l'accueil de Tela Botanica" onclick="ouvrirNouvelleFenetre(this, event)">
-					<img class="image-logo bordure" src="https://resources.tela-botanica.org/tb/img/128x128/logo_carre_officiel.png" alt="Tela Botanica">
+					<img id="image-logo" class="bordure" src="https://resources.tela-botanica.org/tb/img/128x128/logo_carre_officiel.png" alt="Tela Botanica">
 				</a>
+			</div>
+			<div id="zone-titre" class="bordure">
 			</div>
 			<div id="zone-infos" class="bordure">
 				<span id="info-observations"><span id="nombre-observations"></span> observations −</span>
 				<span id="info-taxons"><span id="nombre-taxons"></span> taxons −</span>
 				<span id="info-stations"><span id="nombre-stations"></span> stations</span>
 			</div>
+			<a
+				href="http://www.tela-botanica.org/widget:cel:cartoPoint?carte=avertissement"
+				title="Voir les informations et conditions d'utilisation de ce widget"
+				target="_blank"
+			>
+				<div id="zone-aide" class="bordure">?</div>
+			</a>
 		</div>
 	</body>
 </html>

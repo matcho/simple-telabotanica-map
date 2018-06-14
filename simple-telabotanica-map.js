@@ -2,19 +2,19 @@
 var MAXZOOM = 20; // Leaflet default: 18
 
 var parametresURL = {};
-var parametresAttendus = [
-	'utilisateur',
-	'num_taxon',
-	'dept',
-	'projet',
-	'titre',
-	'referentiel',
-	'logo',
-	'nbjours',
-	'url_site',
-	'image',
-	'groupe_zones_geo'
-];
+var parametresAttendus = {
+	'dept': 'département %s',
+	'groupe_zones_geo': 'zone géographique "%s"',
+	'image': '', // wtf ce vieuw param ? http://www.tela-botanica.org/widget:cel:cartoPoint?utilisateur=21236&image=http://www.trendastic.com/wp-content/uploads/433.jpg
+	'logo': '',
+	'nbjours': 'depuis %s jours',
+	'num_taxon': 'taxon n°%s',
+	'projet': 'projet (mot-clé) "%s"',
+	'referentiel': 'référentiel ',
+	'titre': '',
+	'url_site': '',
+	'utilisateur': 'utilisateur %s'
+};
 var carte;
 var bornesCarte = [[-85.0, -180.0], [85.0, 180.0]];
 var couchePoints;
@@ -31,6 +31,21 @@ $(document).ready(function() {
 	lireParametresURL();
 	//console.log(parametresURL);
 	paramsService = parametresURL;
+	
+	// 1.5 titre et logo personnalisés
+	if ('titre' in parametresURL) {
+		$('#zone-titre').html(parametresURL.titre);
+		$('#zone-titre').show();
+	}
+	if ('logo' in parametresURL) {
+		$('#image-logo').prop('src', parametresURL.logo);
+		// URL perso ?
+		var nouvelleURL = '#'; // par défaut, désactiver le lien vers Tela Botanica
+		if ('url_site' in parametresURL) {
+			nouvelleURL = parametresURL.url_site;
+		}
+		$('#logo > a').prop('href', nouvelleURL);
+	}
 
 	// 2. init map
 	var optionsCoucheOSM = {
@@ -111,7 +126,7 @@ function lireParametresURL(sParam) {
 	for (i=0; i < morceaux.length; i++) {
 		paireParam = morceaux[i].split('=');
 		var nomParam = paireParam[0];
-		if (parametresAttendus.indexOf(nomParam) >= 0) {
+		if (Object.keys(parametresAttendus).indexOf(nomParam) >= 0) {
 			parametresURL[nomParam] = paireParam[1];
 		}
 	}
@@ -125,12 +140,9 @@ function loadData() {
 	// set bbox
 	var bounds = carte.getBounds();
 	var zoom = carte.getZoom();
-	console.log(zoom);
-	console.log(bounds._northEast);
-	console.log(bounds._southWest);
-
-	// debug
-	//if (zoom < 11) { console.log('zoom trop faible: ' + zoom); return; }
+	//console.log(zoom);
+	//console.log(bounds._northEast);
+	//console.log(bounds._southWest);
 
 	// ne charger que les points de la zone affichée, sauf la première fois
 	if (premierChargement) {
@@ -166,8 +178,7 @@ function loadData() {
 			premierChargement = false;
 		},
 		success: (data) => {
-			//console.log('got data !');
-			console.log(data);
+			//console.log(data);
 
 			// clear current markers
 			couchePoints.clearLayers();
@@ -211,8 +222,8 @@ function loadData() {
 			// la première fois, ajuster la carte sans recharger les points
 			if (premierChargement) {
 				inhiberProchainDeplacement = true;
-				console.log('ajustement aux bornes:', couchePoints.getBounds());
-				console.log('infos bornes service:', data.stats.coordmax);
+				//console.log('ajustement aux bornes:', couchePoints.getBounds());
+				//console.log('infos bornes service:', data.stats.coordmax);
 				//carte.fitBounds(couchePoints.getBounds());
 				carte.fitBounds([
 					[data.stats.coordmax.latMax, data.stats.coordmax.lngMax],
@@ -272,7 +283,7 @@ function chargerPopupStation(e, point) {
 				contenu += '<div class="auteur-obs">';
 				var auteur = (o.observateur || 'auteur⋅e inconnu⋅e');
 				if (o.observateurId && o.observateurId != 0) {
-					auteur = '<a href="' + config.profilURL + o.observateurId + '">' + auteur + '</a>';
+					auteur = '<a href="' + config.profilURL + o.observateurId + '" target="_blank">' + auteur + '</a>';
 				}
 				contenu += auteur;
 				contenu += '</div>';
