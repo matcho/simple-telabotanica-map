@@ -2,18 +2,27 @@
 var MAXZOOM = 20; // Leaflet default: 18
 
 var parametresURL = {};
-var parametresAttendus = {
+var parametresAttendus = [
+	'dept',
+	'groupe_zones_geo',
+	'image', // wtf ce vieuw param ? http://www.tela-botanica.org/widget:cel:cartoPoint?utilisateur=21236&image=http://www.trendastic.com/wp-content/uploads/433.jpg
+	'logo',
+	'nbjours',
+	'num_taxon',
+	'projet',
+	'referentiel',
+	'titre',
+	'url_site',
+	'utilisateur'
+];
+var filtres = { // @TODO trouver le meilleur ordre
 	'dept': 'département %s',
 	'groupe_zones_geo': 'zone géographique "%s"',
-	'image': '', // wtf ce vieuw param ? http://www.tela-botanica.org/widget:cel:cartoPoint?utilisateur=21236&image=http://www.trendastic.com/wp-content/uploads/433.jpg
-	'logo': '',
-	'nbjours': 'depuis %s jours',
+	'referentiel': 'référentiel %s',
 	'num_taxon': 'taxon n°%s',
-	'projet': 'projet (mot-clé) "%s"',
-	'referentiel': 'référentiel ',
-	'titre': '',
-	'url_site': '',
-	'utilisateur': 'utilisateur %s'
+	'projet': 'projet "%s"',
+	'utilisateur': 'utilisateur %s',
+	'nbjours': 'depuis %s jours'
 };
 var carte;
 var bornesCarte = [[-85.0, -180.0], [85.0, 180.0]];
@@ -46,6 +55,20 @@ $(document).ready(function() {
 		}
 		$('#logo > a').prop('href', nouvelleURL);
 	}
+
+	// 1.6 affichage infos filtres
+	var infosFiltres = [];
+	for (var filtre in parametresURL) {
+		if (Object.keys(filtres).indexOf(filtre) !== -1) {
+			infosFiltres.push(
+				filtres[filtre].replace('%s', parametresURL[filtre]) // le sprintf du clodo
+			);
+		}
+	}
+	infosFiltres = infosFiltres.join(', ');
+	infosFiltres = infosFiltres.charAt(0).toUpperCase() + infosFiltres.slice(1);
+	$('#zone-filtres').html(infosFiltres);
+	$('#zone-filtres-wrapper').show();
 
 	// 2. init map
 	var optionsCoucheOSM = {
@@ -126,7 +149,7 @@ function lireParametresURL(sParam) {
 	for (i=0; i < morceaux.length; i++) {
 		paireParam = morceaux[i].split('=');
 		var nomParam = paireParam[0];
-		if (Object.keys(parametresAttendus).indexOf(nomParam) >= 0) {
+		if (parametresAttendus.indexOf(nomParam) >= 0) {
 			parametresURL[nomParam] = paireParam[1];
 		}
 	}
