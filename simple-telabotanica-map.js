@@ -248,10 +248,12 @@ function loadData() {
 				//console.log('ajustement aux bornes:', couchePoints.getBounds());
 				//console.log('infos bornes service:', data.stats.coordmax);
 				//carte.fitBounds(couchePoints.getBounds());
-				carte.fitBounds([
-					[data.stats.coordmax.latMax, data.stats.coordmax.lngMax],
-					[data.stats.coordmax.latMin, data.stats.coordmax.lngMin]
-				]);
+				if (data.stats.coordmax.latMax && data.stats.coordmax.lngMax && data.stats.coordmax.latMin && data.stats.coordmax.lngMin) {
+					carte.fitBounds([
+						[data.stats.coordmax.latMax, data.stats.coordmax.lngMax],
+						[data.stats.coordmax.latMin, data.stats.coordmax.lngMin]
+					]);
+				}
 			}
 
 			// hide waiting cursor
