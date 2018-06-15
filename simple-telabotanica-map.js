@@ -303,7 +303,7 @@ function chargerPopupStation(e, point) {
 					taxon = '<a href="' + o.urlEflore + '" target="_blank">' + taxon + '</a>';
 				}
 				contenu += '<div class="taxon-obs">' + taxon + '</div>';
-				contenu += '<div class="date-obs">' + (o.datePubli || 'date inconnue') + '</div>';
+				contenu += '<div class="date-obs">' + (o.date || 'date inconnue') + '</div>';
 				contenu += '<div class="lieu-obs">' + (o.lieu || 'lieu inconnu') + '</div>';
 				contenu += '<div class="auteur-obs">';
 				var auteur = (o.observateur || 'auteur⋅e inconnu⋅e');
