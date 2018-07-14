@@ -5,7 +5,7 @@ var parametresURL = {};
 var parametresAttendus = [
 	'dept',
 	'groupe_zones_geo',
-	'image', // wtf ce vieuw param ? http://www.tela-botanica.org/widget:cel:cartoPoint?utilisateur=21236&image=http://www.trendastic.com/wp-content/uploads/433.jpg
+	'image', // wtf ce vieux param ? http://www.tela-botanica.org/widget:cel:cartoPoint?utilisateur=21236&image=http://www.trendastic.com/wp-content/uploads/433.jpg
 	'logo',
 	'nbjours',
 	'num_taxon',
@@ -304,7 +304,7 @@ function chargerPopupStation(e, point) {
 				}
 				contenu += '<div class="taxon-obs">' + taxon + '</div>';
 				contenu += '<div class="date-obs">' + (o.date || 'date inconnue') + '</div>';
-				contenu += '<div class="lieu-obs">' + (o.lieu || 'lieu inconnu') + '</div>';
+				contenu += '<div class="lieu-obs">' + (o.lieu || '') + '</div>';
 				contenu += '<div class="auteur-obs">';
 				var auteur = (o.observateur || 'auteur⋅e inconnu⋅e');
 				if (o.observateurId && o.observateurId != 0) {
