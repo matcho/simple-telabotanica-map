@@ -328,6 +328,11 @@ function chargerPopupStation(e, point) {
 				contenu += '</div>'; // details-obs
 				contenu += '</div>'; // obs
 			});
+			contenu += '<div class="ajout-obs">';
+			contenu += '<a href="' + config.ajoutObsURL + data.observations[0].idObs + '&lang=' + langue + '" class="btn btn-info" target="_blank">';
+			contenu += s('Ajouter_une_observation_ici');
+			contenu += '</a>';
+			contenu += '</div>'; // ajout-obs
 			contenu += '</div>'; // liste-obs
 			contenu += '</div>'; // popup-obs
 

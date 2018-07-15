@@ -25,5 +25,6 @@ strings.en = {
 	'station_inconnue': 'unknown station',
 	'espece_inconnue': 'unknown species',
 	'date_inconnue': 'unknown date',
-	'auteur_inconnu': 'unknown author'
+	'auteur_inconnu': 'unknown author',
+	'Ajouter_une_observation_ici' : 'Add an observation here'
 };

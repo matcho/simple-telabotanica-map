@@ -219,3 +219,50 @@ body {
 	color: #606060;
 	margin-top: 2px;
 }
+
+.ajout-obs {
+	padding-top: 10px;
+	border-top: solid #f0f0f0 1px;
+}
+
+/* minimal bootstrap button rules */
+.btn {
+	display: inline-block;
+	padding: 6px 12px;
+	margin-bottom: 0;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 1.42857143;
+	text-align: center;
+	white-space: nowrap;
+	vertical-align: middle;
+	cursor: pointer;
+	background-image: none;
+	border: 1px solid transparent;
+	border-radius: 3px;
+}
+.btn.focus, .btn:focus, .btn:hover {
+	color: #333;
+	text-decoration: none;
+}
+.btn-default {
+	color: #333;
+	background-color: #fff;
+	border-color: #ccc;
+}
+.leaflet-container a.btn-default{
+	color: #333;
+	text-decoration: none;
+}
+.btn-info {
+	color: #fff;
+	background-color: #5bc0de;
+	border-color: #46b8da;
+}
+.leaflet-container a.btn-info {
+	color: #fff;
+	text-decoration: none;
+}
+a:active, a:hover {
+	outline: 0;
+}

@@ -25,5 +25,6 @@ strings.fr = {
 	'station_inconnue': 'station inconnue',
 	'espece_inconnue': 'espèce inconnue',
 	'date_inconnue': 'date inconnue',
-	'auteur_inconnu': 'auteur⋅e inconnu⋅e'
+	'auteur_inconnu': 'auteur⋅e inconnu⋅e',
+	'Ajouter_une_observation_ici' : 'Ajouter une observation ici'
 };
