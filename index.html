@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Simple TelaBotanica Map</title>
+		<title></title>
 		<meta charset="UTF-8">
 
 		<link rel="stylesheet" type="text/css" href="default.css">
@@ -15,33 +15,35 @@
 		<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
 		<script type="text/javascript" src="config.js"></script>
 		<script type="text/javascript" src="simple-telabotanica-map.js"></script>
+		<script type="text/javascript" src="lang-fr.js"></script>
+		<script type="text/javascript" src="lang-en.js"></script>
 	</head>
 
 	<body>
 		<div id="map">
 			<div id="zone-chargement-point" class="bordure">
-				<img id="img-chargement" src="chargement.gif" alt="Chargement en cours...">
-				<div id="legende-chargement">Chargement des points en cours...</div>
+				<img id="img-chargement" src="chargement.gif">
+				<div id="legende-chargement"></div>
 			</div>
 			<div id="logo">
-				<a href="http://www.tela-botanica.org" title="Aller à l'accueil de Tela Botanica" onclick="ouvrirNouvelleFenetre(this, event)">
+				<a id="lien-logo" href="http://www.tela-botanica.org">
 					<img id="image-logo" class="bordure" src="https://resources.tela-botanica.org/tb/img/128x128/logo_carre_officiel.png" alt="Tela Botanica">
 				</a>
 			</div>
 			<div id="zone-titre" class="bordure">
 			</div>
 			<div id="zone-infos" class="bordure">
-				<span id="info-observations"><span id="nombre-observations"></span> observations −</span>
-				<span id="info-taxons"><span id="nombre-taxons"></span> taxons −</span>
-				<span id="info-stations"><span id="nombre-stations"></span> stations</span>
+				<span id="info-observations"><span id="nombre-observations"></span> −</span>
+				<span id="info-taxons"><span id="nombre-taxons"></span> −</span>
+				<span id="info-stations"><span id="nombre-stations"></span></span>
 			</div>
 			<div id="zone-filtres-wrapper">
 				<div id="zone-filtres" class="bordure">
 				</div>
 			</div>
 			<a
+				id="lien-infos-cdu"
 				href="http://www.tela-botanica.org/widget:cel:cartoPoint?carte=avertissement"
-				title="Voir les informations et conditions d'utilisation de ce widget"
 				target="_blank"
 			>
 				<div id="zone-aide" class="bordure">?</div>

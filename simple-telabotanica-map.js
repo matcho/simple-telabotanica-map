@@ -1,8 +1,10 @@
 // globals
+var strings = {}; // pour les chaînes traduites, voir "lang-*.js"
+var langue; // langue en cours
 var MAXZOOM = 20; // Leaflet default: 18
-
 var parametresURL = {};
 var parametresAttendus = [
+	'lang',
 	'dept',
 	'groupe_zones_geo',
 	'image', // wtf ce vieux param ? http://www.tela-botanica.org/widget:cel:cartoPoint?utilisateur=21236&image=http://www.trendastic.com/wp-content/uploads/433.jpg
@@ -15,15 +17,6 @@ var parametresAttendus = [
 	'url_site',
 	'utilisateur'
 ];
-var filtres = { // @TODO trouver le meilleur ordre
-	'dept': 'département %s',
-	'groupe_zones_geo': 'zone géographique "%s"',
-	'referentiel': 'référentiel %s',
-	'num_taxon': 'taxon n°%s',
-	'projet': 'projet "%s"',
-	'utilisateur': 'utilisateur %s',
-	'nbjours': 'depuis %s jours'
-};
 var carte;
 var bornesCarte = [[-85.0, -180.0], [85.0, 180.0]];
 var couchePoints;
@@ -40,7 +33,29 @@ $(document).ready(function() {
 	lireParametresURL();
 	//console.log(parametresURL);
 	paramsService = parametresURL;
-	
+
+	// 1.2 langue
+	langue = config.langueDefaut;
+	if ('lang' in parametresURL && parametresURL['lang'] in strings) {
+		langue = parametresURL['lang'];
+	}
+	// injection des traductions dans le HTML
+	$('title').html(s('Carte_des_observations_Tela_Botanica'));
+	$("#legende-chargement").html(s('Chargement_des_points_en_cours'));
+	$("#lien-logo").attr('title', s('Aller_a_l_accueil_de_Tela_Botanica'));
+	$("#lien-infos-cdu").attr('title', s('Voir_informations_et_conditions'));
+
+	// 1.3 titre des filtres
+	var filtres = { // @TODO trouver le meilleur ordre
+		'dept': s('departement') + ' %s',
+		'groupe_zones_geo': s('groupe_zones_geo') + ' "%s"',
+		'referentiel': s('referentiel') + ' %s',
+		'num_taxon': s('taxon') + ' n°%s',
+		'projet': s('projet') + ' "%s"',
+		'utilisateur': s('utilisateur') + ' %s',
+		'nbjours': s('depuis_%s_jours')
+	};
+
 	// 1.5 titre et logo personnalisés
 	if ('titre' in parametresURL) {
 		$('#zone-titre').html(parametresURL.titre);
@@ -105,10 +120,10 @@ $(document).ready(function() {
 	corners['topleft-custom-left'] = L.DomUtil.create('div', 'leaflet-topleft-custom leaflet-left', container);
 	
 	// 2.2 map controls
-	var baseMaps = {
-		"Plan" : coucheOSM,
-		"Satellite" : coucheSatellite
-	};
+	var baseMaps = {};
+	baseMaps[s("Plan")] = coucheOSM;
+	baseMaps[s("Satellite")] = coucheSatellite;
+
 	var overlayMaps = {
 		//"Points" : couchePoints
 	};
@@ -122,20 +137,19 @@ $(document).ready(function() {
 		// sauf si on a sorti un joker !
 		//console.log('inhiberProchainDeplacement :', inhiberProchainDeplacement);
 		if (inhiberProchainDeplacement) {
-			//console.log('ON PASSE UN TOUR');
+			// ON PASSE UN TOUR
 			inhiberProchainDeplacement = false;
 		} else if (inhiber) {
-			//console.log('ON NE BOUGE PLUS JUSQU\'À NOUVEL ORDRE');
+			// ON NE BOUGE PLUS JUSQU\'À NOUVEL ORDRE
 		} else {
 			loadData();
 		}
 	});
-	loadData(); // initial loading
+	loadData(); // chargement initial
 
 	// 4. événements divers
 	// réactiver le chargement des points quand le popup est fermé
 	couchePoints.on('popupclose', (e) => {
-		//console.log('désinhibationnage du cul');
 		inhiber = false;
 	});
 });
@@ -163,9 +177,6 @@ function loadData() {
 	// set bbox
 	var bounds = carte.getBounds();
 	var zoom = carte.getZoom();
-	//console.log(zoom);
-	//console.log(bounds._northEast);
-	//console.log(bounds._southWest);
 
 	// ne charger que les points de la zone affichée, sauf la première fois
 	if (premierChargement) {
@@ -182,7 +193,7 @@ function loadData() {
 		paramsPoints.zoom = zoom;
 	}
 
-	// cancel previous request
+	// annulation de la requête précédente
 	if (requeteEnCours) {
 		requeteEnCours.abort();
 	}
@@ -209,14 +220,14 @@ function loadData() {
 			// nombre de taxons
 			// @TODO appeler le service taxons
 			//var nombreTaxons = '?';
-			//$('#nombre-taxons').html(nombreTaxons);
+			//$('#nombre-taxons').html(nombreTaxons + ' ' + s('taxons'));
 			//$('#info-taxons').show();
 
 			// infos
 			$('#zone-infos').show();
-			$('#nombre-observations').html(data.stats.observations);
+			$('#nombre-observations').html(data.stats.observations + ' ' + s('observations'));
 			$('#info-observations').show();
-			$('#nombre-stations').html(data.stats.stations);
+			$('#nombre-stations').html(data.stats.stations + ' ' + s('stations'));
 			$('#info-stations').show();
 
 			// points
@@ -234,7 +245,10 @@ function loadData() {
 				} else {
 					marker = L.marker([p.lat, p.lng]).addTo(couchePoints);
 					// cliquer sur un marqueur affiche les infos de la station
-					marker.bindPopup('chargement…', { autoPan: true, maxWidth: 450, maxHeight: 450 });
+					marker.bindPopup(
+						titreChargementPopup, /* @TODO remplacer par une fine barre de chargement animée */
+						{ autoPan: true, maxWidth: 450, maxHeight: 450 }
+					);
 					$(marker).click((e) => {
 						inhiber = true;
 						chargerPopupStation(e, p);
@@ -275,14 +289,13 @@ function chargerPopupStation(e, point) {
 	// chargement du popup s'il n'est pas déjà en cache
 	if (! popup.cache) {
 		$.get(URLStation, paramsStation, (data) => {
-			//console.log(data);
 			// construction du contenu du popup
 			// @TODO utiliser un template handlebars plutôt que ce tas de vomi
 			var contenu = '';
 			contenu += '<div class="popup-obs">';
 			var titre = (point.nom || data.commune).replace('()', '').trim();
 			if (titre == '') {
-				titre = 'station inconnue';
+				titre = s('station_inconnue');
 			}
 			contenu += '<div class="titre-obs">' + titre + ' <span class="titre-obs-details">(' + data.observations.length + ')</span></div>';
 			contenu += '<div class="liste-obs">';
@@ -298,15 +311,15 @@ function chargerPopupStation(e, point) {
 				}
 				contenu += baliseImage;
 				contenu += '<div class="details-obs">';
-				var taxon = (o.nomSci || 'espèce inconnue');
+				var taxon = (o.nomSci || s('espece_inconnue'));
 				if (o.nn && o.nn != 0 && o.urlEflore) {
 					taxon = '<a href="' + o.urlEflore + '" target="_blank">' + taxon + '</a>';
 				}
 				contenu += '<div class="taxon-obs">' + taxon + '</div>';
-				contenu += '<div class="date-obs">' + (o.date || 'date inconnue') + '</div>';
+				contenu += '<div class="date-obs">' + (o.date || s('date_inconnue')) + '</div>';
 				contenu += '<div class="lieu-obs">' + (o.lieu || '') + '</div>';
 				contenu += '<div class="auteur-obs">';
-				var auteur = (o.observateur || 'auteur⋅e inconnu⋅e');
+				var auteur = (o.observateur || s('auteur_inconnu'));
 				if (o.observateurId && o.observateurId != 0) {
 					auteur = '<a href="' + config.profilURL + o.observateurId + '" target="_blank">' + auteur + '</a>';
 				}
@@ -340,4 +353,19 @@ function iconeCluster (nb) {
 		c += 'large';
 	}
 	return new L.DivIcon({ html: '<div><span>' + nb + '</span></div>', className: 'marker-cluster' + c, iconSize: new L.Point(40, 40) });
+}
+
+function titreChargementPopup() {
+	return s('chargement…');
+}
+
+// retourne une chaîne traduite
+function s(code) {
+	if (code in strings[langue]) {
+		return strings[langue][code];
+	} else if (code in strings[config.langueDefaut]) {
+		return strings[langue][config.langueDefaut];
+	} else {
+		return 'hoho c\'est la merde'; // dédicace à Aurélien :)
+	}
 }

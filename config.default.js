@@ -1,4 +1,5 @@
 config = {
+	langueDefaut: 'fr',
 	servicePointsURL: 'https://api.tela-botanica.org/service:cel:CelWidgetMapPoint/tout',
 	serviceStationURL: 'https://api.tela-botanica.org/service:cel:CelWidgetMapPoint/observations',
 	tuilesOsmfrURL: 'https://trucmuche.fr/tuiles/osmfr/{z}/{x}/{y}.png',
