@@ -1,7 +1,7 @@
 // globals
 var strings = {}; // pour les chaînes traduites, voir "lang-*.js"
 var langue; // langue en cours
-var MAXZOOM = 20; // Leaflet default: 18
+var MAXZOOM = 18; // Leaflet default: 18
 var parametresURL = {};
 var parametresAttendus = [
 	'lang',
