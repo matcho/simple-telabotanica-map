@@ -82,8 +82,10 @@ $(document).ready(function() {
 	}
 	infosFiltres = infosFiltres.join(', ');
 	infosFiltres = infosFiltres.charAt(0).toUpperCase() + infosFiltres.slice(1);
-	$('#zone-filtres').html(infosFiltres);
-	$('#zone-filtres-wrapper').show();
+	if (infosFiltres !== '') {
+		$('#zone-filtres').html(infosFiltres);
+		$('#zone-filtres-wrapper').show();
+	}
 
 	// 2. init map
 	var optionsCoucheOSM = {
