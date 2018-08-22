@@ -187,10 +187,34 @@ body {
 	border-top: solid #f0f0f0 1px;
 }
 
+.obs > .legende {
+	display: none;
+}
+
 .image-obs {
+	display: none;
 	float: left;
 	height: 96px;
 	width: 96px;
+	border-radius: 2px;
+}
+.obs a:first-of-type .image-obs {
+    display: block;
+}
+.image-pastille {
+    position: absolute;
+    background-color: #147b14;
+    border: solid #bbbbbb 2px;
+    border-radius: 8px;
+    width: 14px;
+    height: 14px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    line-height: 1em;
+    margin-left: 4px;
+    margin-top: 4px;
+    color: white;
 }
 
 .details-obs {

@@ -45,6 +45,28 @@ $(document).ready(function() {
 	$("#lien-logo").attr('title', s('Aller_a_l_accueil_de_Tela_Botanica'));
 	$("#lien-infos-cdu").attr('title', s('Voir_informations_et_conditions'));
 
+	// 1.2.5.645 options de la galerie d'images
+	$.fancybox.defaults.transitionEffect = 'slide';
+	$.fancybox.defaults.lang = langue;
+	$.fancybox.defaults.i18n.fr = {
+		CLOSE: "Fermer",
+		NEXT: "Suivant",
+		PREV: "Précédent",
+		ERROR: "Impossible de charger le contenu. <br/> Réessayez ultérieurement.",
+		PLAY_START: "Démarrer le diaporama",
+		PLAY_STOP: "Mettre en pause le diaporama",
+		FULL_SCREEN: "Plein écran",
+		THUMBS: "Miniatures",
+		DOWNLOAD: "Télécharger",
+		SHARE: "Partager",
+		ZOOM: "Zoom"
+    };
+	$.fancybox.defaults.caption = function(instance, item) {
+		var captionId = $(this).data('caption-id');
+		var caption = $('#' + captionId);
+		return caption;
+	};
+
 	// 1.3 titre des filtres
 	var filtres = { // @TODO trouver le meilleur ordre
 		'dept': s('departement') + ' %s',
@@ -301,35 +323,57 @@ function chargerPopupStation(e, point) {
 			}
 			contenu += '<div class="titre-obs">' + titre + ' <span class="titre-obs-details">(' + data.observations.length + ')</span></div>';
 			contenu += '<div class="liste-obs">';
-			data.observations.forEach((o) => {
+
+			for (var i=0; i < data.observations.length; i++) {
+				var o = data.observations[i];
 				contenu += '<div class="obs">';
-				var image = 'pasdimagenb.png';
-				if (o.images && o.images.length > 0) {
-					image = o.images[0].miniature.replace('CXS', 'CRXS');
-				}
-				var baliseImage = '<img class="image-obs" src="' + image + '">';
-				if (o.images && o.images.length > 0 && o.images[0].normale) {
-					baliseImage = '<a href="' + o.images[0].normale + '" target="_blank">' + baliseImage + '</a>';
-				}
-				contenu += baliseImage;
-				contenu += '<div class="details-obs">';
 				var taxon = (o.nomSci || s('espece_inconnue'));
 				if (o.nn && o.nn != 0 && o.urlEflore) {
 					taxon = '<a href="' + o.urlEflore + '" target="_blank">' + taxon + '</a>';
 				}
-				contenu += '<div class="taxon-obs">' + taxon + '</div>';
-				contenu += '<div class="date-obs">' + (o.date || s('date_inconnue')) + '</div>';
-				contenu += '<div class="lieu-obs">' + (o.lieu || '') + '</div>';
-				contenu += '<div class="auteur-obs">';
+				var date = (o.date || s('date_inconnue'));
 				var auteur = (o.observateur || s('auteur_inconnu'));
 				if (o.observateurId && o.observateurId != 0) {
 					auteur = '<a href="' + config.profilURL + o.observateurId + '" target="_blank">' + auteur + '</a>';
 				}
+				// si pas d'image, fausse image
+				if (!o.images || o.images.length === 0) {
+					o.images = [{
+							miniature: 'pasdimagenb.png'
+					}];
+				}
+				// pour chaque image
+				for (var j=0; j < o.images.length; j++) {
+					var im = o.images[j];
+					var imageMiniature = im.miniature.replace('CXS', 'CRXS');
+					var baliseImage = '<img class="image-obs" src="' + imageMiniature + '">';
+					// légende avec liens
+					var captionId = 'caption-' + i + '-' + j;
+					contenu += '<div class="legende" id="' + captionId + '">' + taxon + ' par ' + auteur + ', le ' + date + '</div>';
+					// image
+					if (im.normale) {
+						baliseImage = '<a data-fancybox="gallery-' + o.idObs 
+							+ '" href="' + im.normale
+							+ '" data-caption-id="' + captionId
+							+ '" target="_blank">'
+						+ baliseImage + '</a>';
+					}
+					if (o.images.length > 1) {
+						baliseImage = '<div class="image-pastille">' + o.images.length + '</div>' + baliseImage;
+					}
+					contenu += baliseImage;
+				}
+
+				contenu += '<div class="details-obs">';
+				contenu += '<div class="taxon-obs">' + taxon + '</div>';
+				contenu += '<div class="date-obs">' + date + '</div>';
+				contenu += '<div class="lieu-obs">' + (o.lieu || '') + '</div>';
+				contenu += '<div class="auteur-obs">';
 				contenu += auteur;
 				contenu += '</div>';
 				contenu += '</div>'; // details-obs
 				contenu += '</div>'; // obs
-			});
+			}
 			contenu += '<div class="ajout-obs">';
 			contenu += '<a href="' + config.ajoutObsURL + data.observations[0].idObs + '&lang=' + langue + '" class="btn btn-info" target="_blank">';
 			contenu += s('Ajouter_une_observation_ici');
