@@ -14,5 +14,4 @@ C'est la faute au webservice
 ## qu'est-ce qui manque ?
  * une interface pour saisir son adresse email et voir "sa" carte
  * un interface qui montre la liste des taxons et permette le filtrage par taxon
- * la gestion des images multiples dans les popups d'observations
  * le nombre de taxons affichés (mais le webservice renvoie des informations fausses)
