@@ -15,3 +15,6 @@ C'est la faute au webservice
  * une interface pour saisir son adresse email et voir "sa" carte
  * un interface qui montre la liste des taxons et permette le filtrage par taxon
  * le nombre de taxons affichés (mais le webservice renvoie des informations fausses)
+
+## exemple en ligne
+http://sitealanoix.org/simple-telabotanica-map/?utilisateur=21236
